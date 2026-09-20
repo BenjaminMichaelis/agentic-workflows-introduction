@@ -4,14 +4,19 @@ on:
   workflow_dispatch:
   roles: [admin, maintainer, write]
 
-# Teaching moment: the agent's GitHub permissions stay read-only.
-# The issue is created later by the create-issue safe output, not by giving
-# the agent direct write access to the GitHub Issues API.
+# Teaching moment: every repository permission below is read. Nothing here
+# lets the agent write to the repo. The issue still gets created, by the
+# create-issue safe output running in a separate job after the agent finishes.
+#
+# copilot-requests is the one exception, and it is not a repository
+# permission: it authorizes Copilot inference through the Actions token,
+# which is what pays for the model call.
 permissions:
   contents: read
   issues: read
   pull-requests: read
   actions: read
+  copilot-requests: write
 
 engine:
   id: copilot
