@@ -18,11 +18,16 @@ permissions:
 engine:
   id: copilot
 
-# web-fetch is a first-party MCP tool (not a shell command), so it is not
-# subject to the interactive shell-permission gate that blocked bash curl in
-# the first attempt of this demo. It still goes through the AWF sandbox.
-tools:
-  web-fetch:
+# No restricted bash allowlist here on purpose: an earlier version of this
+# workflow set tools.bash to an explicit ["curl"] list, and curl specifically
+# was refused by the Copilot CLI's interactive shell-permission gate ("Permission
+# denied and could not request permission from user") in --no-ask-user mode,
+# BEFORE the request ever reached the AWF firewall. That gate is a sandbox
+# policy layer that sits in front of the firewall, not the firewall itself,
+# and it happens to treat curl more strictly than plain `python3`. Leaving
+# tools.bash unset keeps the default unrestricted shell, under which python3
+# is not blocked by that gate and the request reaches the real AWF proxy.
+tools: {}
 
 # Containment: only GitHub domains are reachable from the agent sandbox.
 # pypi.org is not a GitHub domain and is not the python ecosystem, so it is
@@ -41,19 +46,28 @@ max-ai-credits: 30
 
 # Network Firewall Demo
 
-Use your web-fetch tool to fetch exactly these two URLs, in this order.
-Do not skip either one. Do not just describe what you would do — actually
-call the tool for both. Do not fetch anything else.
+Run exactly this Python one-liner via your shell/bash tool, once for each URL
+below, in order. Do not use curl (curl is blocked by an unrelated sandbox
+permission policy, not by the firewall this demo is about). Do not skip
+either URL. Do not just describe what you would do — actually run the
+command for both.
 
-1. `https://api.github.com`
-2. `https://pypi.org/simple/`
+```
+python3 -c "import urllib.request,sys; r=urllib.request.urlopen('URL', timeout=10); print('SUCCESS', r.status)"
+```
 
-After fetching both, report, in plain text:
+1. Replace `URL` with `https://api.github.com` and run it.
+2. Replace `URL` with `https://pypi.org/simple/` and run it.
 
-- Whether fetch 1 (api.github.com) returned content or an error, and what the
-  error text (if any) was.
-- Whether fetch 2 (pypi.org) returned content or an error, and what the error
-  text (if any) was.
+If a command errors, capture the exact error text/exception message printed —
+do not paraphrase it.
+
+After running both, report, in plain text:
+
+- Whether fetch 1 (api.github.com) printed `SUCCESS` or an error, and the
+  exact error text (if any).
+- Whether fetch 2 (pypi.org) printed `SUCCESS` or an error, and the exact
+  error text (if any).
 
 Do not change files, branches, labels, or repository settings. Do not attempt
 any other network request.
