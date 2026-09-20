@@ -6,3 +6,6 @@ Thumbs.db
 
 # gh-aw/local run artifacts
 .runs/
+
+# gh aw audit downloads
+.github/aw/logs/
