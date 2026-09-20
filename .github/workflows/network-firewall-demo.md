@@ -71,3 +71,7 @@ After running both, report, in plain text:
 
 Do not change files, branches, labels, or repository settings. Do not attempt
 any other network request.
+
+Report your two-line summary using the `noop` safe-output tool only. Do NOT
+call `create_issue` — this is a live demo and must not leave a GitHub issue
+behind.
