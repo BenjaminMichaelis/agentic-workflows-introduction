@@ -1,0 +1,17 @@
+# DO NOT USE - deliberately naive, shown on stage in the talk
+name: naive-issue-responder
+on:
+  schedule: [{cron: "*/15 * * * *"}]
+permissions: {issues: write}
+jobs:
+  respond:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - run: |
+          for issue in $(gh issue list --state open --json number -q '.[].number'); do
+            body=$(gh issue view "$issue" --json body -q '.body')
+            gh issue comment "$issue" --body "$(echo "$body" | some-llm-cli --prompt 'reply helpfully')"
+          done
