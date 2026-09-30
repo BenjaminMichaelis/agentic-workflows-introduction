@@ -86,6 +86,10 @@ package or changing a path outside `demo/ci-chain/`, do not create a PR. Call
 
 ## Pull request
 
+Call `create_pull_request` exactly once, with the final title and body. Every
+safe-output call is real and counts toward the limit of one - never call it to
+test formatting or escaping.
+
 Create exactly one PR with title:
 
 `Adapt demo/ci-chain to <Package> <version> breaking change`

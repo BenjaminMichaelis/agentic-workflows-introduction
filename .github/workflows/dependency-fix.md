@@ -5,6 +5,10 @@ on:
     types: [reopened]
   roles: [admin, maintainer, write]
 
+# Only issue #8 is this demo's trigger. Without this, reopening any issue -
+# including the injection demo's issue #3 - also starts this workflow.
+if: ${{ github.event.issue.number == 8 }}
+
 # Containment layer 1 - least privilege, same posture as issue-triage.md.
 # Every repository permission below is read. The token the agent job holds
 # literally cannot write to this repository. The pull request still gets
@@ -96,6 +100,9 @@ ${{ steps.sanitized.outputs.text }}
    confirm it succeeds.
 4. Use the `create-pull-request` safe output to open exactly one pull request
    containing only the version-bump change in `demo/toil-repro/ToilRepro.csproj`.
+   Call it exactly once, with the final title and body. Every safe-output call
+   is real and counts toward the limit of one - never call it to test
+   formatting or escaping.
 
 ## PR content requirements
 
