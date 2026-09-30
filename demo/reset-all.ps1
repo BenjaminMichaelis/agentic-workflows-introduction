@@ -143,9 +143,15 @@ foreach ($entry in $results.GetEnumerator()) {
     Write-Host ("  [{0}] {1}" -f $(if ($entry.Value) { 'ok' } else { '!!' }), $entry.Key)
 }
 
+# Pushes made with the Actions token (for example by reset-demo.yml) never
+# start CI, so the newest main commit often has no CI run at all. That is fine;
+# the build is proven green on the next real push.
+$mainSha = git -C $repoRoot rev-parse origin/main
 $ci = gh run list -R $Repo --workflow ci.yml --branch main --limit 1 --json status,conclusion,headSha,url | ConvertFrom-Json | Select-Object -First 1
-if ($ci) {
-    Write-Host "  [..] Latest CI on main: $($ci.status) $($ci.conclusion) ($($ci.url)) - should finish green before you walk on."
+if ($ci -and $ci.headSha -eq $mainSha) {
+    Write-Host "  [..] CI on the current main commit: $($ci.status) $($ci.conclusion) ($($ci.url)) - should be green before you walk on."
+} elseif ($ci) {
+    Write-Host "  [..] No CI run for the current main commit (reset pushes don't start CI). Last CI run was for an older commit: $($ci.conclusion)."
 }
 
 if ($results.Values -contains $false) {

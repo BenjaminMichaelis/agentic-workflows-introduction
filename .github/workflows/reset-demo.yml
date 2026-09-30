@@ -1,0 +1,61 @@
+# Resets the demo repository to its on-stage starting state, from anywhere:
+#   Actions tab -> Reset demo -> Run workflow, or
+#   gh workflow run reset-demo.yml -R BenjaminMichaelis/agentic-workflows-introduction -f preview=false
+#
+# Plain YAML on purpose: resetting is fully deterministic, so there is no model
+# in this workflow. It is also the one workflow in this repo that holds a write
+# token - manual dispatch only, owner only, no untrusted input.
+#
+# Pushes made with the Actions token do not start other workflows, so
+# re-arming main can never set off CI -> ci-doctor -> ci-fixer.
+
+name: Reset demo
+
+on:
+  workflow_dispatch:
+    inputs:
+      preview:
+        description: "Preview only: report what would change, change nothing"
+        type: boolean
+        default: true
+
+concurrency:
+  group: reset-demo
+  cancel-in-progress: false
+
+permissions:
+  actions: read
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  reset:
+    if: github.actor == github.repository_owner
+    # The demo/*.ps1 scripts use Windows paths; run them where they were written.
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Configure commit identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Reset demo
+        if: ${{ !inputs.preview }}
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: ./demo/reset-all.ps1
+
+      - name: Preview (no changes)
+        if: ${{ inputs.preview }}
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: ./demo/reset-all.ps1 -Preview
