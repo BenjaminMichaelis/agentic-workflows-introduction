@@ -84,14 +84,18 @@ $generatedIssues = @($openIssues | Where-Object { (Test-GeneratedIssue $_) -and 
 $demoPrs = @($openPrs | Where-Object { $_.labels.name -contains 'ci-fix' -or $_.labels.name -contains 'dependency-fix' })
 $otherPrs = @($openPrs | Where-Object { $demoPrs.number -notcontains $_.number })
 $otherIssues = @($openIssues | Where-Object {
-    $chainIssues.number -notcontains $_.number -and $generatedIssues.number -notcontains $_.number
+    $chainIssues.number -notcontains $_.number -and $generatedIssues.number -notcontains $_.number -and $protectedIssues -notcontains $_.number
 })
+# A live-authoring file that got committed breaks `gh aw new weekly-digest` on
+# stage (it stops to ask before overwriting). Remove it from main; history keeps it.
+$trackedLeftovers = @($authoringLeftovers | Where-Object { git -C $repoRoot ls-files -- $_ })
 
 Write-Host ''
 Write-Host 'Reset plan:'
 Write-Host "  CI chain issues to close:   $(if ($chainIssues) { ($chainIssues | ForEach-Object { "#$($_.number)" }) -join ' ' } else { 'none' })"
 Write-Host "  Demo PRs to close:          $(if ($demoPrs) { ($demoPrs | ForEach-Object { "#$($_.number)" }) -join ' ' } else { 'none' })"
 Write-Host "  Generated issues to close:  $(if ($generatedIssues) { ($generatedIssues | ForEach-Object { "#$($_.number)" }) -join ' ' } else { 'none' })"
+Write-Host "  Committed leftovers to remove from main: $(if ($trackedLeftovers) { $trackedLeftovers -join ', ' } else { 'none' })"
 Write-Host '  Re-arm: issue #3 (injection), issue #8 + Newtonsoft.Json 12.0.1 (dependency-fix), CsvHelper 19.0.0 (chain)'
 foreach ($pr in $otherPrs) { Write-Warning "Leaving open PR #$($pr.number) '$($pr.title)' - the live repo-status report will mention it." }
 foreach ($issue in $otherIssues) { Write-Warning "Leaving open issue #$($issue.number) '$($issue.title)'." }
@@ -103,6 +107,16 @@ if (-not $Preview) {
     & (Join-Path $PSScriptRoot 'reset-ci-chain.ps1') -Repo $Repo
     & (Join-Path $PSScriptRoot 'reset-dependency-fix.ps1') -Repo $Repo
     & (Join-Path $PSScriptRoot 'reset.ps1') -Repo $Repo
+
+    if ($trackedLeftovers.Count -gt 0) {
+        git -C $repoRoot rm -q -- $trackedLeftovers
+        if ($LASTEXITCODE -ne 0) { throw 'Could not remove the committed live-authoring files.' }
+        git -C $repoRoot commit -q -m 'demo: remove committed live-authoring leftovers (weekly-digest)'
+        if ($LASTEXITCODE -ne 0) { throw 'Could not commit the leftover removal.' }
+        git -C $repoRoot push -q origin main
+        if ($LASTEXITCODE -ne 0) { throw 'The leftover removal was committed locally, but pushing main failed.' }
+        Write-Host "Removed committed live-authoring files from main (still in history): $($trackedLeftovers -join ', ')"
+    }
 
     foreach ($issue in $generatedIssues) {
         gh issue close $issue.number -R $Repo --reason 'not planned' | Out-Null
