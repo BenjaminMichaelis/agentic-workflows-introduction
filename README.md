@@ -17,6 +17,7 @@ Running the workflow, not just reading it, requires all of the following:
 - The GitHub CLI (`gh`) installed and authenticated for your fork.
 - The GitHub Agentic Workflows extension installed with `gh extension install github/gh-aw`.
 - Model access and billing for the selected engine. This demo uses the `copilot` engine, so availability depends on your account or organization setup.
+  - If your fork's runs fail to reach the model, your account may not support `copilot-requests: write` (the [auth docs](https://github.github.io/gh-aw/reference/auth/#copilot_github_token) say it needs an organization with centralized Copilot billing). In that case, remove that line from the workflow's `permissions:`, run `gh aw compile`, and add a `COPILOT_GITHUB_TOKEN` repository secret instead. The secret is ignored while the permission is set.
 
 Not everyone will be able to run this live in a conference room. That is expected. You can still follow the talk by reading the Markdown workflow and the generated lock file.
 
