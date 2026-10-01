@@ -2,8 +2,7 @@ using CsvHelper;
 using CsvHelper.Configuration;
 using System.Globalization;
 
-var configuration = new CsvConfiguration(CultureInfo.InvariantCulture);
-configuration.HasHeaderRecord = false;
+var configuration = new CsvConfiguration(CultureInfo.InvariantCulture) { HasHeaderRecord = false };
 
 using var writer = new StringWriter();
 using var csv = new CsvWriter(writer, configuration);
